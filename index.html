@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Richard Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="website">
+<meta property="og:title" content="Richard Blog">
+<meta property="og:url" content="http://yoursite.com/index.html">
+<meta property="og:site_name" content="Richard Blog">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Richard Blog">
+  
+    <link rel="alternate" href="/atom.xml" title="Richard Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Richard Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" results="0" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main">
+  
+    <article id="post-TCP实践" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/03/14/TCP实践/" class="article-date">
+  <time datetime="2017-03-14T09:51:00.000Z" itemprop="datePublished">2017-03-14</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Network/">Network</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/03/14/TCP实践/">TCP实践</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="TCP实践分享"><a href="#TCP实践分享" class="headerlink" title="TCP实践分享"></a>TCP实践分享</h1><h2 id="协议相关"><a href="#协议相关" class="headerlink" title="协议相关"></a>协议相关</h2><p>TCP是传输层协议，是面向连接的可靠连接。</p>
+<pre><code>“可靠连接”指在建立连接前需要数据包确认，断开连接也需要数据包确认，而且数据需要校验，有重发机制，并且双方都维持这种状态。
+</code></pre><p> <strong>TCP状态变迁</strong><br> 《TCP/IP详解卷1：协议》中的图：<br> <img src="/media/14834258968178/14835010132825.jpg" alt=""><br>实线说明的是客户端正常状态变迁，虚线说明的是服务器端正常状态变迁，对于异常状态，有限状态机没有明确说明，或者说明不清楚。</p>
+<p>从另外较明确的图形中可以看出，如下：<br> <img src="/media/14834258968178/14835009218260.jpg" alt=""></p>
+<p><strong>正常状态图</strong></p>
+<pre><code>对于各个正常的建立连接和断开连接来看主要有几个状态：
+
+对于客户端：
+CLOSED---&gt;SYN_SENT---&gt;ESTABLISHED---&gt;FIN_WAIT_1---&gt;FIN_WAIT_2---&gt;TIME_WAIT
+
+对于服务端：
+CLOSED---&gt;LISTEN---&gt;SYN_RCVD---&gt;ESTABLISHED---&gt;CLOSE_WAIT---&gt;LAST_ACK
+</code></pre><p> 如果以时间为序来描述正常的TCP建立和断开连接，则如下图：<br> <img src="/media/14834258968178/14835115711242.jpg" alt=""></p>
+<pre><code>当客户端发送SYN包给服务器端后进入SYN_SENT状态，而服务器端在收到客户端的SYN数据包后
+进入SYN_RCVD状态，其他状态的进入和退出依次类推。
+</code></pre><p>TCP有限状态图中包括：三次握手、四次挥手、服务器端重置复位、TCP两端同时打开、TCP两端同时关闭五个状态变迁图。对于三次握手和四次挥手是最正常的状态变迁，其他都是属于异常状态变迁。</p>
+<p><strong>服务器重置</strong></p>
+<p>当服务端收到客户端的syn后，开始发送ack和syn，在发送syn和ack的过程中如果客户端断网或者发送超时，服务端会自动发送rst，将接受的syn重置掉。</p>
+<p><strong>TCP状态同时打开</strong></p>
+<p>两个应用程序同时执行主动打开的情况是可能的，虽然发生的可能性较低。每一端都发送一个SYN,并传递给对方，且每一端都使用对端所知的端口作为本地端口。例如：<br>主机a中一应用程序使用7777作为本地端口，并连接到主机b 8888端口做主动打开。<br>主机b中一应用程序使用8888作为本地端口，并连接到主机a 7777端口做主动打开。<br>tcp协议在遇到这种情况时，只会打开一条连接。<br>这个连接的建立过程需要4次数据交换，而一个典型的连接建立只需要3次交换（即3次握手），比正常连接多一次数据交换。<br><img src="/media/14834258968178/Screen%20Shot%202017-01-09%20at%20%E4%B8%8B%E5%8D%883.04.17.png" alt=""></p>
+<p><strong>TCP同时关闭</strong></p>
+<p>如果应用程序同时发送FIN，则在发送后会首先进入FIN_WAIT_1状态。在收到对端的FIN后，回复一个ACK，会进入CLOSING状态。在收到对端的ACK后，进入TIME_WAIT状态。这种情况称为同时关闭。<br>同时关闭也需要有4次报文交换，与典型的关闭相同。<br><img src="/media/14834258968178/Screen%20Shot%202017-01-09%20at%20%E4%B8%8B%E5%8D%883.07.14.png" alt=""></p>
+<p><strong>完整时序图状态机</strong><br><img src="/media/14834258968178/14835009218260.jpg" alt=""></p>
+<h2 id="问题处理"><a href="#问题处理" class="headerlink" title="问题处理"></a>问题处理</h2><p><strong>Linux TCP状态</strong><br>    可以使用ss -s来统计系统中TCP状态：<br>    <img src="media/14834258968178/Screen%20Shot%202017-01-09%20at%20%E4%B8%8B%E5%8D%886.16.54.png" alt=""><br>   通常情况下使用ss命令来查看tcp状态，跟netstat相比，ss是调用内核接口能够迅速得到数据，而netstat是读取/proc文件系统速度慢，在负载比较高的机器上操作netstat容易卡主。</p>
+<p>   estab、closed、synrecv、timewait分别是tcp状态中ESTABLISHED、CLOSED、SYN_RCVD、TIME_WAIT的统计。orphaned是孤儿socket，类似僵尸进程，可以用特殊方式中和掉。</p>
+<p><strong>time_wait存在的价值</strong><br><img src="/media/14834258968178/14839522469595.jpg" alt=""><br>ACK K+1在传输的过程中丢失了。</p>
+<pre><code>Time_WAIT的存在的价值是保证全双工工作的的TCP链接能够正常关闭。
+在Time_WAIT状态中，任何迟到的报文将被丢失，防止影响新的TCP链接。
+</code></pre><p>详细解释：<br> 1）为实现TCP这种全双工（full-duplex）连接的可靠释放<br>   参考本文前面给出的TCP释放连接4次挥手示意图，假设发起active close的一方（图中为client）发送的ACK（4次交互的最后一个包）在网络中丢失，那么由于TCP的重传机制，执行passiveclose的一方（图中为server）需要重发其FIN，在该FIN到达client（client是active close发起方）之前，client必须维护这条连接的状态（尽管它已调用过close），具体而言，就是这条TCP连接对应的（local_ip, local_port）资源不能被立即释放或重新分配。直到romete peer重发的FIN达到，client也重发ACK后，该TCP连接才能恢复初始的CLOSED状态。如果activeclose方不进入TIME_WAIT以维护其连接状态，则当passive close方重发的FIN达到时，active close方的TCP传输层会以RST包响应对方，这会被对方认为有错误发生（而事实上，这是正常的关闭连接过程，并非异常）。<br>2）为使旧的数据包在网络因过期而消失<br>   为说明这个问题，我们先假设TCP协议中不存在TIME_WAIT状态的限制，再假设当前有一条TCP连接：(local_ip, local_port, remote_ip,remote_port)，因某些原因，我们先关闭，接着很快以相同的四元组建立一条新连接。本文前面介绍过，TCP连接由四元组唯一标识，因此，在我们假设的情况中，TCP协议栈是无法区分前后两条TCP连接的不同的，在它看来，这根本就是同一条连接，中间先释放再建立的过程对其来说是“感知”不到的。这样就可能发生这样的情况：前一条TCP连接由local peer发送的数据到达remote peer后，会被该remot peer的TCP传输层当做当前TCP连接的正常数据接收并向上传递至应用层（而事实上，在我们假设的场景下，这些旧数据到达remote peer前，旧连接已断开且一条由相同四元组构成的新TCP连接已建立，因此，这些旧数据是不应该被向上传递至应用层的），从而引起数据错乱进而导致各种无法预知的诡异现象。作为一种可靠的传输协议，TCP必须在协议层面考虑并避免这种情况的发生，这正是TIME_WAIT状态存在的第2个原因。<br>   具体而言，local peer主动调用close后，此时的TCP连接进入TIME_WAIT状态，处于该状态下的TCP连接不能立即以同样的四元组建立新连接，即发起active close的那方占用的local port在TIME_WAIT期间不能再被重新分配。由于TIME_WAIT状态持续时间为2MSL，这样保证了旧TCP连接双工链路中的旧数据包均因过期（超过MSL）而消失，此后，就可以用相同的四元组建立一条新连接而不会发生前后两次连接数据错乱的情况。</p>
+<p><strong>time_wait的危害</strong><br>time_wait使得一个TCP链接等待2MSL(Maximum Segment Lifetime)时间，并且在这个时间内的socket（服务器的IP和端口）不能被重用，通常情况在大量短链接的服务中会耗干端口（0-65535）资源。<br>对于nginx代理，haproxy代理来说比较要命。而且对于提供http服务来讲，http协议是主动断开链接，server端会进入time_wait状态。</p>
+<pre><code>rfc793 指出MSL为2分钟，然而，现实中的常用值是30秒，1分钟或者2分钟。centos6.5和centos7.2MSL时间是30s
+</code></pre><p><strong>tcp的recycle和reuse</strong><br>recycle是time-wait的快速回收，<br>TIME_WAIT快速回收在Linux上通过net.ipv4.tcp_tw_recycle启用，由于其根据时间戳来判定，所以必须开启TCP时间戳才有效。建议：如果前端部署了三/四层NAT设备，尽量关闭快速回收，以免发生NAT背后真实机器由于时间戳混乱导致的SYN拒绝问题。</p>
+<p>reuse是time-wait的重用<br>TIME_WAIT重用在Linux中通过net.ipv4.tcp_tw_reuse启用，但需要保证以下任意一点，一个TW状态的四元组(即一个socket连接)可以重新被新到来的SYN连接使用：<br>1）初始序列号比TW老连接的末序列号大<br>2）如果使能了时间戳，那么新到来的连接的时间戳比老连接的时间戳大</p>
+<p><strong>tcp的keepalive</strong><br>TCP经历三次握手建立链接后，如果应用程序或者上层协议一直不发送数据，或者隔很长时间才发送一次数据，当链接很久没有数据报文传输时如何去确定对方还在线，到底是掉线了还是确实没有数据传输，链接还需不需要保持，这种情况在TCP协议设计中是需要考虑到的。TCP协议通过一种巧妙的方式去解决这个问题，当超过一段时间之后，TCP自动发送一个数据为空的报文给对方，如果对方回应了这个报文，说明对方还在线，链接可以继续保持，如果对方没有报文返回，并且重试了多次之后则认为链接丢失，没有必要保持链接。<br>通常情况下涉及到三个参数：</p>
+<pre><code>net.ipv4.tcp_keepalive_intvl = 75
+net.ipv4.tcp_keepalive_probes = 9
+net.ipv4.tcp_keepalive_time = 7200
+</code></pre><p>tcp_keepalive_time在TCP保活打开的情况下，最后一次数据交换到TCP发送第一个保活探测包的间隔，即允许的持续空闲时长，或者说每次正常发送心跳的周期，默认值为7200s（2h）。<br>tcp_keepalive_probes在tcp_keepalive_time之后，没有接收到对方确认，继续发送保活探测包次数，默认值为9（次）。<br>tcp_keepalive_intvl在tcp_keepalive_time之后，没有接收到对方确认，继续发送保活探测包的发送频率，默认值为75s。</p>
+<p><strong>http的keep-alive</strong><br>从HTTP/1.1起，默认都开启了Keep-Alive，保持连接特性，简单地说，当一个网页打开完成后，客户端和服务器之间用于传输HTTP数据的TCP连接不会关闭，如果客户端再次访问这个服务器上的网页，会继续使用这一条已经建立的连接。</p>
+<p>Keep-Alive不会永久保持连接，它有一个保持时间，可以在不同的服务器软件（如Apache）中设定这个时间。</p>
+<pre><code>keepalive_timeout  120;
+</code></pre><p><strong>设置FIN_WAIT_2时间</strong><br>此外可以设置状态在FIN_WAIT_2存在的时间：</p>
+<p>net.ipv4.tcp_fin_timeout = 15</p>
+<p>这个参数是用来设置保持在FIN_WAIT_2状态的时间，这个时间不是固定的，取决于数据交流的速度。tcp4次挥手，正常的处理流程就是在FIN_WAIT_2情况下接收到FIN进入到TIME_WAIT的情况，tcp_fin_timeout参数对处于TIME_WAIT状态的时间没有任何影响。但是如果这个参数设的比较小，会缩短从FIN_WAIT_2到TIME_WAIT的时间，从而使连接更早地进入TIME_WAIT状态。状态开始的早，等待相同的时间，结束的也早，客观上也加速了TIME_WAIT状态套接字的清理速度。<br>在内网环境中net.ipv4.tcp_fin_timeout值影响较小，主动断开端在接收到fin后立刻就会发送ack给被动断开端，不是必须等待时间；在跨公网环境下，被动断开端发送fin时间可能很长，可以考虑将net.ipv4.tcp_fin_timeout时间加长，使得主动端能够快速进入Time-wait状态。</p>
+<h2 id="nginx连接tomcat实战"><a href="#nginx连接tomcat实战" class="headerlink" title="nginx连接tomcat实战"></a>nginx连接tomcat实战</h2><p>nginx连接tomcat时，nginx作为访问的前端proxy，tomcat作为后端，此时nginx作为客户端访问tomcat server端。</p>
+<pre><code>nginx（client）-------http-----------tomcat（server）
+</code></pre><p>为了减少nginx和tomcat之间的time-wait，需要都采用http协议的1.1版本，来保持会话。<br>tomcat作为nginx后端时，采用http协议连接。<br>对于http来说server端会产生time-wait，可以启用tomcat的keep-alive，启用方法：<br>nginx的配置如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">location /http/ &#123;</div><div class="line">	proxy_pass http://http_backend;</div><div class="line">	proxy_http_version 1.1;</div><div class="line">	proxy_set_header Connection &quot;&quot;;</div><div class="line">	...</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<pre><code>注意：upstream中的keepalive设置，相当于每个worker连接池的最大空闲keepalive连接数，
+跟http里的keep-alive不是一回事，http的keep-alive需要额外配置。
+</code></pre><p>tomcat中的配置：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">&lt;Connector port=&quot;8080&quot; protocol=&quot;HTTP/1.1&quot; </div><div class="line">               connectionTimeout=&quot;20000&quot; </div><div class="line">               redirectPort=&quot;8443&quot; keepAliveTimeout=&quot;3600000&quot; maxKeepAliveRequests=&quot;300&quot;/&gt;</div></pre></td></tr></table></figure>
+<p>配置TOMCAT及httpClient的keepalive以高效利用长连接。<br>keepAliveTimeout：表示在下次请求过来之前，tomcat保持该连接多久。这就是说假如客户端不断有请求过来，且为超过过期时间，则该连接将一直保持。<br>maxKeepAliveRequests：表示该连接最大支持的请求数。超过该请求数的连接也将被关闭（此时就会返回一个Connection: close头给客户端）</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/03/14/TCP实践/" data-id="cj0assy460000gkgbxpkca5w7" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/network/">network</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Network/">Network</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/network/">network</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/network/" style="font-size: 10px;">network</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/03/">March 2017</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2017/03/14/TCP实践/">TCP实践</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2017 Richard Hsiung<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
