@@ -21,7 +21,7 @@ CLOSED---&gt;LISTEN---&gt;SYN_RCVD---&gt;ESTABLISHED---&gt;CLOSE_WAIT---&gt;LAST
 <p><strong>TCP同时关闭</strong></p>
 <p>如果应用程序同时发送FIN，则在发送后会首先进入FIN_WAIT_1状态。在收到对端的FIN后，回复一个ACK，会进入CLOSING状态。在收到对端的ACK后，进入TIME_WAIT状态。这种情况称为同时关闭。<br>同时关闭也需要有4次报文交换，与典型的关闭相同。<br><img src="/media/14834258968178/Screen%20Shot%202017-01-09%20at%20%E4%B8%8B%E5%8D%883.07.14.png" alt=""></p>
 <p><strong>完整时序图状态机</strong><br><img src="/media/14834258968178/14835009218260.jpg" alt=""></p>
-<h2 id="问题处理"><a href="#问题处理" class="headerlink" title="问题处理"></a>问题处理</h2><p><strong>Linux TCP状态</strong><br>    可以使用ss -s来统计系统中TCP状态：<br>    <img src="media/14834258968178/Screen%20Shot%202017-01-09%20at%20%E4%B8%8B%E5%8D%886.16.54.png" alt=""><br>   通常情况下使用ss命令来查看tcp状态，跟netstat相比，ss是调用内核接口能够迅速得到数据，而netstat是读取/proc文件系统速度慢，在负载比较高的机器上操作netstat容易卡主。</p>
+<h2 id="问题处理"><a href="#问题处理" class="headerlink" title="问题处理"></a>问题处理</h2><p><strong>Linux TCP状态</strong><br>    可以使用ss -s来统计系统中TCP状态：<br>    <img src="/media/14834258968178/Screen%20Shot%202017-01-09%20at%20%E4%B8%8B%E5%8D%886.16.54.png" alt=""><br>   通常情况下使用ss命令来查看tcp状态，跟netstat相比，ss是调用内核接口能够迅速得到数据，而netstat是读取/proc文件系统速度慢，在负载比较高的机器上操作netstat容易卡主。</p>
 <p>   estab、closed、synrecv、timewait分别是tcp状态中ESTABLISHED、CLOSED、SYN_RCVD、TIME_WAIT的统计。orphaned是孤儿socket，类似僵尸进程，可以用特殊方式中和掉。</p>
 <p><strong>time_wait存在的价值</strong><br><img src="/media/14834258968178/14839522469595.jpg" alt=""><br>ACK K+1在传输的过程中丢失了。</p>
 <pre><code>Time_WAIT的存在的价值是保证全双工工作的的TCP链接能够正常关闭。
